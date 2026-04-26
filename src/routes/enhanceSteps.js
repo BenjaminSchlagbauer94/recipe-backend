@@ -21,7 +21,12 @@ ${ingredients.map((ing, i) => `${i + 1}. ${ing}`).join('\n')}
 Steps:
 ${steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}
 
-Task: Update the steps so that every time an ingredient name appears in the text, its exact amount from the ingredient list is present immediately before the ingredient name. If the amount is already there correctly, leave it unchanged. Do not change any other wording, language, or structure. Preserve the original language exactly.
+Task: For every ingredient name that appears in the steps, make sure the amount immediately before it exactly matches the ingredient list above.
+- If the amount is already correct: leave it as is.
+- If the amount is wrong (e.g. outdated value): replace it with the correct amount from the ingredient list.
+- If no amount is present before the ingredient name: insert the correct amount from the ingredient list.
+- Do not change any other wording, language, sentence structure, or punctuation.
+- Preserve the original language exactly (German stays German, English stays English).
 
 Return ONLY a valid JSON array of strings — one string per step, same order, same count as the input. No markdown, no explanation, no code fences.`
 
