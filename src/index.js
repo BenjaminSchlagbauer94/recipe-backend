@@ -54,6 +54,7 @@ app.use('/categories',           require('./routes/categories'))
 app.use('/shopping',             require('./routes/shopping'))
 app.use('/inspirations',         require('./routes/inspirations'))
 app.use('/grocery-suggestions',  require('./routes/grocerySuggestions'))
+app.use('/enhance-steps',        require('./routes/enhanceSteps'))
 
 // ── 404 + Error handlers ─────────────────────────────────
 app.use(notFound)
