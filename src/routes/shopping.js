@@ -16,39 +16,45 @@ function scaleIngredients(ingredients, originalServings, targetServings) {
 }
 
 // POST /shopping/list
-// Body: { items: [{ recipeId, servings }] }
+// Body: { items: [{ recipeId, servings }], otherItems: ["toilet paper", ...] }
 router.post('/list', async (req, res, next) => {
   try {
-    const { items } = req.body
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: 'items array is required' })
+    const { items = [], otherItems = [] } = req.body
+    if (items.length === 0 && otherItems.length === 0) {
+      return res.status(400).json({ error: 'items or otherItems is required' })
     }
 
-    const recipeIds = items.map(i => i.recipeId)
-    const { data: recipes, error } = await supabase
-      .from('recipes')
-      .select('id, name, servings, ingredients')
-      .in('id', recipeIds)
-
-    if (error) throw error
-
-    // Scale each recipe's ingredients and collect them all
     const allIngredients = []
-    for (const item of items) {
-      const recipe = recipes.find(r => r.id === item.recipeId)
-      if (!recipe) continue
-      const scaled = scaleIngredients(recipe.ingredients || [], recipe.servings, item.servings)
-      allIngredients.push(`--- ${recipe.name} (${item.servings} people) ---`)
-      allIngredients.push(...scaled)
+
+    if (items.length > 0) {
+      const recipeIds = items.map(i => i.recipeId)
+      const { data: recipes, error } = await supabase
+        .from('recipes')
+        .select('id, name, servings, ingredients')
+        .in('id', recipeIds)
+      if (error) throw error
+
+      for (const item of items) {
+        const recipe = recipes.find(r => r.id === item.recipeId)
+        if (!recipe) continue
+        const scaled = scaleIngredients(recipe.ingredients || [], recipe.servings, item.servings)
+        allIngredients.push(`--- ${recipe.name} (${item.servings} people) ---`)
+        allIngredients.push(...scaled)
+      }
+    }
+
+    if (otherItems.length > 0) {
+      allIngredients.push('--- Other Items ---')
+      allIngredients.push(...otherItems)
     }
 
     const prompt = `You are organising a shopping list for grocery shopping at an Irish Dunnes store.
 
-Below are ingredients from multiple recipes, already scaled to the correct serving amounts.
+Below are ingredients from recipes (already scaled) and any manually added items.
 
 Tasks:
 1. Merge identical or very similar ingredients (add their amounts where units match)
-2. Place each ingredient into the correct grocery store category
+2. Place each item into the correct store category
 3. Sort categories in the order a shopper walks through Dunnes
 
 Categories IN THIS EXACT ORDER (skip a category if it has no items):
@@ -59,6 +65,7 @@ Categories IN THIS EXACT ORDER (skip a category if it has no items):
 - Canned & Preserved
 - Pasta, Rice & Grains
 - Pantry & Other
+- Household & Personal Care
 
 Return ONLY this JSON (no markdown, no explanation):
 {
@@ -73,9 +80,10 @@ Return ONLY this JSON (no markdown, no explanation):
 }
 
 Rules:
-- "name" = clean ingredient name only, no amounts, capitalise first letter
-- "amount" = quantity + unit as a string ("300g", "2 cloves", "1 L", "to taste")
+- "name" = clean item name only, no amounts, capitalise first letter
+- "amount" = quantity + unit as a string ("300g", "2 cloves", "1 L", "to taste", "1 pack"); use empty string "" if no quantity applies
 - Keep the original language of the ingredients (German stays German)
+- Non-food household/personal care items (toilet paper, shower gel, etc.) go in "Household & Personal Care"
 - Ignore recipe header lines starting with ---
 
 Ingredients:
