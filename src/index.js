@@ -51,6 +51,7 @@ app.get('/health', (req, res) => {
 app.use('/scrape',     require('./routes/scrape'))
 app.use('/recipes',    require('./routes/recipes'))
 app.use('/categories', require('./routes/categories'))
+app.use('/shopping',   require('./routes/shopping'))
 
 // ── 404 + Error handlers ─────────────────────────────────
 app.use(notFound)
