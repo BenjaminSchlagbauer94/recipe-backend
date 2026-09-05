@@ -41,14 +41,13 @@ function countActiveSlotsBeforeDate(anchorDateStr, targetDateStr, activeDays) {
   return count
 }
 
-function getNextActiveDay(activeDays) {
+function getMondayOfCurrentWeek() {
   const today = new Date()
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(today)
-    d.setDate(today.getDate() + i)
-    if (activeDays.includes(DAY_NAMES[d.getDay()])) return toDateStr(d)
-  }
-  return toDateStr(today)
+  const day = today.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  const monday = new Date(today)
+  monday.setDate(today.getDate() + diff)
+  return toDateStr(monday)
 }
 
 async function getCalendarRow() {
@@ -80,9 +79,7 @@ async function getRecipesByIds(ids) {
 
 async function doReshuffle(activeDays, highlightedIds) {
   const carouselOrder = shuffle(highlightedIds)
-  const anchorDate = activeDays.length > 0
-    ? getNextActiveDay(activeDays)
-    : toDateStr(new Date())
+  const anchorDate = getMondayOfCurrentWeek()
   const { error } = await supabase
     .from('cooking_calendar')
     .upsert({
